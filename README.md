@@ -9,10 +9,10 @@ This software is provided without warranty of any kind. Use at your own risk.
 You must to be able to run `python3`, `curl`, and `make`. These are installed by default on macOS and most Linux distributions.
 
 ## Usage
-
+ 
 - Go to the [orders page](https://us.etrade.com/etx/sp/stockplan#/myAccount/orders) for your stock plan.
 - Select the year you are interested in and click apply.
-- For each order, copy the table under "Order History" and paste it into [sales-etrade.txt](sales-etrade.txt).
+- For each benefit type, copy the table under "Order History" and paste it into [sales-etrade.txt](sales-etrade.txt).
 - Run `make` - this will automatically download exchange rates and apply the conversions.
 - Open the output in [sales-skat.txt](sales-skat.txt) and enter the sales in the Værdipapirsystem.
 

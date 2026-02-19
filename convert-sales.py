@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 
+from __future__ import annotations
+
 from bisect import bisect_right
 from collections import defaultdict
 from datetime import datetime, date
 from decimal import Decimal
-from typing import Self
 from zoneinfo import ZoneInfo
 import csv
 import locale
@@ -38,16 +39,19 @@ class Sale:
     quantity: int
     sum_dkk: Decimal
 
-    def __add__(self, other: Self) -> Self:
-        return Sale(self.quantity + other.quantity, self.sum_dkk + other.sum_dkk)
+    def __add__(self, other: Sale) -> Sale:
+        return Sale(
+            quantity=self.quantity + other.quantity,
+            sum_dkk=self.sum_dkk + other.sum_dkk
+        )
 
 # Orders may have many transactions executed at the same time - so for reporting to Skat we
 # coalesce any that happen at the same time.
-sales: dict[datetime, Sale] = defaultdict(lambda: Sale(0, 0))
+orders: dict[datetime, Sale] = defaultdict(lambda: Sale(0, Decimal(0)))
 
-with open('sales-etrade.txt') as input:
-    for line in input:
-        [transaction, datetime_et, quantity_str, price_usd] = line.split('\t')
+with open('sales-etrade.txt') as etrade_file:
+    for line in etrade_file:
+        [transaction, datetime_et, quantity_str, price_usd] = line.rstrip().split('\t')
         
         if transaction in ['Order Placed', 'Transaction']:
             # Either header or order placement - not relevant
@@ -76,19 +80,19 @@ with open('sales-etrade.txt') as input:
 
         usd_index = bisect_right(usd, date_dk, key=lambda rate: rate.date)
 
-        if usd_index == len(usd):
+        if usd_index == 0 or usd_index == len(usd):
             raise ValueError(f'No exchange rate found for {date_dk} (usd.csv out of date?)')
 
         dkk_per_usd = usd[usd_index - 1].dkk_per_usd
         quantity = int(quantity_str)
         sum_dkk = quantity * Decimal(price_usd) * dkk_per_usd
 
-        sales[datetime_dk] += Sale(quantity, sum_dkk)
+        orders[datetime_dk] += Sale(quantity, sum_dkk)
 
-with open('sales-skat.txt', 'w') as output:
-    for (datetime_dk, sale) in sorted(sales.items()):
+with open('sales-skat.txt', 'w') as skat_file:
+    for (datetime_dk, sale) in sorted(orders.items()):
         date_str = datetime_dk.strftime('%d-%m-%Y')
         time = datetime_dk.strftime('%H:%M:%S')
-        sum = format(sale.sum_dkk, '.2f').replace('.', ',')
+        sum_dkk = format(sale.sum_dkk, '.2f').replace('.', ',')
 
-        print(f'Salg  {date_str}  {time}  {-sale.quantity:>4}  {sum:>10}', file=output)
+        print(f'Salg  {date_str}  {time}  {-sale.quantity:>4}  {sum_dkk:>10}', file=skat_file)
