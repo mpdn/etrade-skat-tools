@@ -1,3 +1,8 @@
+__pycache__
+BenefitHistory.xlsx
 usd.csv
-sales-etrade.txt
-sales-skat.txt
+usd.csv.tmp
+orders-etrade.txt
+orders-skat.txt
+income.txt
+.venv
